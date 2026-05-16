@@ -1,0 +1,177 @@
+
+#ifndef __RUN_H__
+#define __RUN_H__
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+
+#include "motorEx.h"
+#include "go_motor.h"
+#include "dm_h6215.h"
+/**
+ * @brief 关节结构体 - 单个关节电机的完整控制参数
+ */
+typedef struct {
+    GO_MotorHandle_t motor;    /**< 电机句柄（包含 ID、RS485 总线指针等） */
+    float pos_offset;          /**< 角度零点偏移量 (rad)，用于校准机械安装误差 */
+    float inv_motor;          /**< 电机方向标志：1-正转，-1-反转 */
+
+    float exp_rad;             /**< 期望角度 (rad) */
+    float exp_omega;           /**< 期望角速度 (rad/s) */
+    float exp_torque;          /**< 期望力矩 (N·m) */
+
+    float Kp;                  /**< 位置环比例增益 */
+    float Kd;                  /**< 位置环微分增益 */
+} Joint_t;
+
+/**
+ * @brief 轮子电机结构体 - 轮式电机的控制参数
+ */
+typedef struct {
+    DMH6215_t wheel_;          /**< 轮子电机句柄（CAN 通讯） */
+    int8_t inv_wheel;          /**< 轮子方向标志：1-正转，-1-反转 */
+    float exp_omega;           /**< 期望轮子角速度 (rad/s) */
+    float exp_torque;          /**< 期望轮子力矩 (N·m) */
+} DMH6215_t_;
+
+/**
+ * @brief 单条腿结构体 - 包含 3 个关节电机和 1 个轮子电机
+ */
+typedef struct {
+    Joint_t joint[3];          /**< 3 个关节电机（髋关节、大腿、小腿） */
+    DMH6215_t_ wheel;          /**< 轮子电机 */
+    uint32_t timestamp;
+} Leg_t;
+
+
+#pragma pack(1)                /**< 1 字节对齐，确保数据包紧凑传输，避免内存空洞 */
+
+/* ==================== 下行数据包（PC → 下位机）==================== */
+
+/**
+ * @brief 单个关节电机的目标值
+ */
+typedef struct {
+    float rad;                 /**< 目标角度 (rad) */
+    float omega;               /**< 目标角速度 (rad/s) */
+    float torque;              /**< 目标力矩 (N·m) */
+    float kp;                  /**< 位置环比例增益 */
+    float kd;                  /**< 位置环微分增益 */
+} MotorTarget_t;
+
+/**
+ * @brief 轮子电机的目标值
+ */
+typedef struct {
+    float omega;               /**< 目标轮子角速度 (rad/s) */
+    float torque;              /**< 目标轮子力矩 (N·m) */
+} WheelTarget_t;
+
+/**
+ * @brief 单条腿的目标值集合
+ */
+typedef struct {
+    MotorTarget_t joint[3];    /**< 3 个关节的目标结构体 */
+    WheelTarget_t wheel;       /**< 轮子的目标结构体 */
+} LegTarget_t;
+
+/**
+ * @brief 完整的电机控制数据包（下行 - 从 PC 到控制器）
+ */
+typedef struct {
+    int pack_type;             /**< 数据包类型标识：0x00 表示电机控制包 */
+    LegTarget_t leg[4];        /**< 4 条腿的目标结构体 */
+	uint32_t timestamp;
+} MotorTargetPack_t;
+
+/* ==================== 遥控器数据包 ==================== */
+
+/**
+ * @brief 遥控器原始数据包 - 直接从遥控器接收的帧格式
+ */
+typedef struct {
+    uint8_t head;              /**< 帧头标识：0xAA */
+    int16_t rocker[4];         /**< 4 路摇杆 ADC 值，范围 0~2047 */
+    uint8_t key1;              /**< 按键组 1 状态（bit 位表示不同按键） */
+    uint8_t key2;              /**< 按键组 2 状态（bit 位表示不同按键） */
+    uint8_t end;               /**< 帧尾标识 */
+} RemotePack_t;
+
+
+/* ==================== 上行数据包（下位机 → PC）==================== */
+
+/**
+ * @brief 三维向量结构体 - 用于表示角速度、加速度等
+ */
+typedef struct {
+    float X, Y, Z;             /**< 三轴分量（机体坐标系） */
+} Vector3D_Typedef_;
+
+/**
+ * @brief 解析后的遥控指令 - 经过滤波和贝塞尔变换后的控制量
+ */
+typedef struct {
+    float vx;                  /**< 前进/后退速度 (m/s)：前向为正 */
+    float vy;                  /**< 横向速度 (m/s)：左向为正 */
+    float omega;               /**< 自转角速度 (rad/s)：逆时针为正 */
+    float wheel_v;             /**< 轮子速度系数 (0~1) */
+} RemoteCmd_t;
+
+/**
+ * @brief 陀螺仪数据结构 - JY61 传感器的测量值
+ */
+typedef struct {
+    Vector3D_Typedef_ AngularVelocity;  /**< 角速度 (rad/s)，机体坐标系 */
+    struct {
+        float Yaw, Pitch, Roll;         /**< 欧拉角 (rad)：偏航、俯仰、横滚 */
+    } Angle;
+} JY61_Typedef_;
+
+/**
+ * @brief 单个关节电机的状态反馈
+ */
+typedef struct {
+    float rad;                 /**< 实际角度 (rad) */
+    float omega;               /**< 实际角速度 (rad/s) */
+    float torque;              /**< 实际力矩 (N·m)（估算值） */
+} MotorState_t;
+
+/**
+ * @brief 轮子电机的状态反馈
+ */
+typedef struct {
+    float omega;               /**< 轮子实际角速度 (rad/s) */
+    float torque;              /**< 轮子实际力矩 (N·m)（估算值） */
+} WheelState_t;
+
+/**
+ * @brief 单条腿的状态反馈集合
+ */
+typedef struct {
+    MotorState_t joint[3];     /**< 3 个关节的状态反馈 */
+    WheelState_t wheel;        /**< 轮子的状态反馈 */
+} LegState_t;
+
+/**
+ * @brief 完整的状态反馈数据包（上行 - 从控制器到 PC）
+ */
+typedef struct {
+    int pack_type;             /**< 数据包类型标识：0x00 表示状态反馈包 */
+    LegState_t leg[4];         /**< 4 条腿的状态反馈 */
+   // JY61_Typedef_ JY61_;       /**< 陀螺仪数据（角速度 + 欧拉角） */
+   // RemoteCmd_t remote_cmd;    /**< 当前遥控指令（已解析并滤波） */
+    uint16_t watch_dog;        /**< 看门狗标志位：bit 位为 1 表示对应电机掉线 */
+	uint32_t timestamp;
+} MotorStatePack_t;
+
+#pragma pack()
+
+
+void MotorControlTask_Front(void* param);
+void MotorControlTask_Back(void* param);
+void MotorSendTask(void* param);
+void MotorRecvTask(void* param);
+void WheelControlTask(void* param);
+//void UART7_RemotecontrolTask(void *param);
+#endif
