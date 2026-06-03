@@ -53,7 +53,6 @@
 
 /* USER CODE BEGIN PV */
 extern DMA_HandleTypeDef hdma_usart6_rx;
-extern uint8_t remote_control_buf[12];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -236,7 +235,6 @@ extern MotorStatePack_t legs_state;
 uint8_t tim_reset = 0;
 
 
-extern uint32_t Fack_Motor_TX;
 /* USER CODE END 4 */
 
  /* MPU Configuration */
@@ -281,10 +279,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
   if(htim->Instance==TIM13)
 	{
-
-
-    Fack_Motor_TX++;
-
 
     if((bad_Motor & 0x0fff) != 0) tim_reset++;
     else tim_reset = 0;

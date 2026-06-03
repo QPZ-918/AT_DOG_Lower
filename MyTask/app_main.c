@@ -10,11 +10,10 @@
 
 extern RS485_t rs485bus;
 //  extern RS485_t rs485bus_2;
-extern uint8_t remote_control_buf[12];
 TaskHandle_t usb_send_task_handle;
 TaskHandle_t usb_recv_task_handle;
 //TaskHandle_t motor_control_task_handle;
-TaskHandle_t wheel_control_task_handle;
+//TaskHandle_t wheel_control_task_handle;
 TaskHandle_t unitree_task_handle;
 // TaskHandle_t uart7_remocont_task_handle;
 // TaskHandle_t uart2_recovery_handle;
@@ -73,7 +72,7 @@ void app_main()
 	xTaskCreate(MotorRecvTask,"MotorRecv",128,NULL,5,&usb_recv_task_handle);
 	// 创建 USART2 恢复任务，处理硬件噪声导致的连续错误恢复
 	//xTaskCreate(USART2_RecoveryTask,"USART2Rec",256,NULL,4,&uart2_recovery_handle);
-	xTaskCreate(WheelControlTask,"WheelCtrl",128,NULL,6,&wheel_control_task_handle);
+	//xTaskCreate(WheelControlTask,"WheelCtrl",128,NULL,6,&wheel_control_task_handle);
 	xTaskCreate(BMI088_task,"BMI088_task",128,NULL,3,&BMI088_task_handle);
 	//xTaskCreate(UART7_RemotecontrolTask,"UART7Recont",256,NULL,3,&uart7_remocont_task_handle);
 	WS2812_Init();

@@ -59,7 +59,8 @@
 *.bak
 *.uvprojx.bak
 *.uvoptx.bak
-
+Dog_lower.code-workspace
+.eide/eide.yml
 # 系统文件
 Thumbs.db
 Desktop.ini
