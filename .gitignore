@@ -60,7 +60,7 @@
 *.bak
 *.uvprojx.bak
 *.uvoptx.bak
-/MDK-ARM/.eide
+/MDK-ARM/.eide/
 
 # 系统文件
 Thumbs.db
