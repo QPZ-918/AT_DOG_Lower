@@ -158,8 +158,7 @@ void MotorSendTask(void *param) // 将电机的数据发送到PC上
                 legs_state.leg[i].joint[j].omega = (leg[i].joint[j].motor.state.velocity) / 6.33f * leg[i].joint[j].inv_motor;
                 legs_state.leg[i].joint[j].torque = (leg[i].joint[j].motor.state.torque) * 6.33f / leg[i].joint[j].inv_motor;
             }
-            legs_state.leg[i].wheel.omega = leg[i].wheel.inv_wheel * leg[i].wheel.wheel_.velocity;
-            legs_state.leg[i].wheel.torque = leg[i].wheel.inv_wheel * leg[i].wheel.wheel_.torque;
+
 						legs_state.tim_p = leg[i].tim_p;
             // TODO:根据反馈计算真实力矩
         }
