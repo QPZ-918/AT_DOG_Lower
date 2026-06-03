@@ -54,13 +54,14 @@
 /MDK-ARM/Dog_lower/*._i
 
 
+
 # 杂项 IDE 缓存
 *.uvgui.*
 *.bak
 *.uvprojx.bak
 *.uvoptx.bak
-Dog_lower.code-workspace
-.eide/eide.yml
+/MDK-ARM/.eide
+
 # 系统文件
 Thumbs.db
 Desktop.ini

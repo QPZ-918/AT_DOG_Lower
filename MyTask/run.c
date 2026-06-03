@@ -1,7 +1,6 @@
 #include "run.h"
 #include "usart.h"
 #include "usb_trans.h"
-#include <cstdint>
 #include <string.h>
 #include "usbd_cdc_if.h"
 #include "bezier.h"
