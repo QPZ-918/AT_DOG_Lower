@@ -54,15 +54,19 @@
 /MDK-ARM/Dog_lower/*._i
 
 
+
 # 杂项 IDE 缓存
 *.uvgui.*
 *.bak
 *.uvprojx.bak
 *.uvoptx.bak
+/MDK-ARM/.eide/
 
 # 系统文件
 Thumbs.db
 Desktop.ini
 .DS_Store
+.vscode
 
 # End of https://www.toptal.com/developers/gitignore/api/keil
+MDK-ARM/Dog_lower.BAT
