@@ -1,6 +1,7 @@
 #include "run.h"
 #include "usart.h"
 #include "usb_trans.h"
+#include <cstdint>
 #include <string.h>
 #include "usbd_cdc_if.h"
 #include "bezier.h"
@@ -217,7 +218,7 @@ void WheelControlTask(void *param)
 
         vTaskDelay(2);
     }
-
+    static uint16_t wheel_enable = 0;
     TickType_t last_wake_time = xTaskGetTickCount();
     while (1)
     {
@@ -234,6 +235,20 @@ void WheelControlTask(void *param)
             DMH6215_MIT_Control(&leg[i].wheel.wheel_, wheel_exp_rad,
                                 leg[i].wheel.inv_wheel * leg[i].wheel.exp_omega, leg[i].wheel.inv_wheel * leg[i].wheel.exp_torque,
                                 wheel_Kp, wheel_Kd);
+        }
+        wheel_enable++;
+        wheel_enable %= 125;
+        if(!wheel_enable)
+        {
+            for (uint8_t i = 0; i < 2; i++)
+            {
+                DMH6215_Enable(&leg[i].wheel.wheel_);
+            }
+            vTaskDelay(2);
+            for (uint8_t i = 2; i < 4; i++)
+            {
+                DMH6215_Enable(&leg[i].wheel.wheel_);
+            }
         }
     }
 }
