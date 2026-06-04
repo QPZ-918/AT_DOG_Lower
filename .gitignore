@@ -60,7 +60,7 @@
 *.bak
 *.uvprojx.bak
 *.uvoptx.bak
-/MDK-ARM/.eide/
+
 
 # 系统文件
 Thumbs.db
@@ -70,5 +70,4 @@ Desktop.ini
 
 # End of https://www.toptal.com/developers/gitignore/api/keil
 MDK-ARM/Dog_lower.BAT
-MDK-ARM/.eide/eide.yml
 MDK-ARM/Dog_lower.code-workspace
