@@ -57,6 +57,8 @@ typedef struct {
     MotorTarget_t joint[3];    /**< 3 个关节的目标结构体 */
 } LegTarget_t;
 
+
+
 /**
  * @brief 完整的电机控制数据包（下行 - 从 PC 到控制器）
  */
@@ -77,15 +79,12 @@ typedef struct {
 } Vector3D_Typedef_;
 
 
-/**
- * @brief 陀螺仪数据结构 - JY61 传感器的测量值
- */
-typedef struct {
-    Vector3D_Typedef_ AngularVelocity;  /**< 角速度 (rad/s)，机体坐标系 */
-    struct {
-        float Yaw, Pitch, Roll;         /**< 欧拉角 (rad)：偏航、俯仰、横滚 */
-    } Angle;
-} JY61_Typedef_;
+ typedef struct {
+   Vector3D_Typedef_ AngularVelocity;
+   struct {
+     float q0, q1, q2 ,q3;
+   } Angle;
+ } IMU_Typedef_;
 
 /**
  * @brief 单个关节电机的状态反馈
@@ -109,6 +108,7 @@ typedef struct {
 typedef struct {
     int pack_type;             /**< 数据包类型标识：0x00 表示状态反馈包 */
     LegState_t leg[4];         /**< 4 条腿的状态反馈 */
+		IMU_Typedef_ imu_data;
     uint16_t watch_dog;        /**< 看门狗标志位：bit 位为 1 表示对应电机掉线 */
 	uint32_t timestamp;
 } MotorStatePack_t;
@@ -120,4 +120,5 @@ void MotorControlTask_Front(void* param);
 void MotorControlTask_Back(void* param);
 void MotorSendTask(void* param);
 void MotorRecvTask(void* param);
+void BMI088_task(void *param);
 #endif

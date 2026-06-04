@@ -15,6 +15,7 @@ TaskHandle_t usb_recv_task_handle;
 //TaskHandle_t motor_control_task_handle;
 TaskHandle_t unitree_front_task_handle;
 TaskHandle_t unitree_back_task_handle;
+TaskHandle_t BMI088_task_handle;
 
 QueueHandle_t remote_semaphore;
 
@@ -67,6 +68,7 @@ void app_main()
 	xTaskCreate(MotorControlTask_Back,"MotorComm_Back",256,NULL,6,&unitree_back_task_handle);
 	xTaskCreate(MotorSendTask,"MotorSend",256,NULL,4,&usb_send_task_handle);
 	xTaskCreate(MotorRecvTask,"MotorRecv",128,NULL,5,&usb_recv_task_handle);
+	xTaskCreate(BMI088_task,"BMI088_task",256,NULL,3,&BMI088_task_handle);
 	WS2812_Init();
 	while(1)
 	{

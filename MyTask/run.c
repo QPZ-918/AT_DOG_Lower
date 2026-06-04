@@ -4,6 +4,7 @@
 #include <string.h>
 #include "usbd_cdc_if.h"
 #include "tim.h"
+#include "imu_temp_ctrl.h"
 
 /*************************
  * 测试模式开关
@@ -55,6 +56,8 @@ int err_check_back = 0;        // 每轮通讯检查：6 个电机的接收成�
 
 
 uint8_t usb_recv_timeout = 0;
+
+BMI088_data IMU_data;
 
 /************************
  * 电机系统数据结构
@@ -265,29 +268,13 @@ void MotorSendTask(void *param) // 将电机的数据发送到PC上
             // TODO:根据反馈计算真实力矩
         }
 
-        //        uint8_t flag_check = 1;//检测陀螺仪数据是否正常，1：正常 ，0：异常
-        //        JY61_Typedef_ JY61_2 = {};
-        //        JY61_2.AngularVelocity.X = JY61.AngularVelocity.X * 3.1415926 / 180.0f;
-        //        JY61_2.AngularVelocity.Y = JY61.AngularVelocity.Y * 3.1415926 / 180.0f;
-        //        JY61_2.AngularVelocity.Z = JY61.AngularVelocity.Z * 3.1415926 / 180.0f;
-
-        //        JY61_2.Angle.Roll = JY61.Angle.Roll * 3.1415926 / 180.0f;
-        //        JY61_2.Angle.Pitch = JY61.Angle.Pitch * 3.1415926 / 180.0f;
-        //        JY61_2.Angle.Yaw = JY61.Angle.Yaw * 3.1415926 / 180.0f;
-
-        //        if (JY61_2.AngularVelocity.X > 2.0f || JY61_2.AngularVelocity.X < -2.0f)
-        //            flag_check = 0;
-        //        else if (JY61_2.AngularVelocity.Y > 2.0f || JY61_2.AngularVelocity.Y < -2.0f)
-        //            flag_check = 0;
-        //        else if (JY61_2.AngularVelocity.Z > 2.0f || JY61_2.AngularVelocity.Z < -2.0f)
-        //            flag_check = 0;
-        //        else if (JY61_2.Angle.Roll > 1.0f || JY61_2.Angle.Roll < -1.0f)
-        //            flag_check = 0;
-        //        else if (JY61_2.Angle.Pitch > 1.0f || JY61_2.Angle.Pitch < -1.0f)
-        //            flag_check = 0;
-
-        //        if (flag_check)
-        //            legs_state.JY61_ = JY61_2;
+        legs_state.imu_data.Angle.q0 = IMU_data.q[0];
+        legs_state.imu_data.Angle.q1 = IMU_data.q[1];
+        legs_state.imu_data.Angle.q2 = IMU_data.q[2];
+        legs_state.imu_data.Angle.q3 = IMU_data.q[3];
+        legs_state.imu_data.AngularVelocity.X = IMU_data.Gyro[0];
+        legs_state.imu_data.AngularVelocity.Y = IMU_data.Gyro[1];
+        legs_state.imu_data.AngularVelocity.Z = IMU_data.Gyro[2];
         if (allow_send) // 电机数据准备好再发
             CDC_Transmit_HS((uint8_t *)&legs_state, len);
         if (legs_state.watch_dog != 0x0000)
@@ -375,6 +362,20 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     }
 }
 
+
+uint32_t cnt_imu = 0;
+void BMI088_task(void *param)
+{
+
+    INS_Init();
+    TickType_t last_wake_time = xTaskGetTickCount();
+    for (;;)
+    {
+		//cnt_imu++;
+        INS_Task(&IMU_data);
+        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(1));
+    }
+}
 
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
