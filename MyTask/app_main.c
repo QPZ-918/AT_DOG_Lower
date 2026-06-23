@@ -8,7 +8,8 @@
 #include "freertos.h"
 #include "BMI088driver.h"
 
-extern RS485_t rs485bus;
+extern RS485_t rs485bus_front;
+extern RS485_t rs485bus_back;
 //  extern RS485_t rs485bus_2;
 TaskHandle_t usb_send_task_handle;
 TaskHandle_t usb_recv_task_handle;
@@ -52,6 +53,16 @@ uint8_t hue = 0;
 
 uint8_t r,g,b;
 
+uint8_t rs485bus_front_se_buf[sizeof(GOMotor_SendPack_t)] __attribute__((section("RAM_D2_485"), aligned(32)));
+
+uint8_t rs485bus_back_se_buf[sizeof(GOMotor_SendPack_t)] __attribute__((section("RAM_D2_485"), aligned(32)));
+
+uint8_t rs485bus_back_re_buf[sizeof(GOMotor_SendPack_t)] __attribute__((section("RAM_D2_485"), aligned(32)));
+
+uint8_t rs485bus_front_re_buf[sizeof(GOMotor_SendPack_t)] __attribute__((section("RAM_D2_485"), aligned(32)));
+
+
+
 void app_main()
 {
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_PIN_SET);
@@ -65,9 +76,11 @@ void app_main()
 	
 	/*
 	*/
-	RS485Init(&rs485bus, &huart2, NULL, NULL);	//该串口拥有硬件流控制脚，所以写NULL表示使用硬件流控制脚
+	RS485Init(&rs485bus_front, &huart2, NULL, NULL, rs485bus_front_se_buf, rs485bus_front_re_buf);	//该串口拥有硬件流控制脚，所以写NULL表示使用硬件流控制脚
+	RS485Init(&rs485bus_back, &huart3, NULL, NULL, rs485bus_back_se_buf, rs485bus_back_re_buf);	//该串口拥有硬件流控制脚，所以写NULL表示使用硬件流控制脚
 	//remote_semaphore =	xSemaphoreCreateBinary();
-	xTaskCreate(MotorControlTask,"MotorComm",256,NULL,6,&unitree_task_handle);
+	xTaskCreate(MotorControlTask_Front,"MotorCommFront",256,NULL,6,&unitree_task_handle);
+	xTaskCreate(MotorControlTask_Back,"MotorCommBack",256,NULL,6,&unitree_task_handle);
 	xTaskCreate(MotorSendTask,"MotorSend",256,NULL,4,&usb_send_task_handle);
 	xTaskCreate(MotorRecvTask,"MotorRecv",256,NULL,5,&usb_recv_task_handle);
 	// 创建 USART2 恢复任务，处理硬件噪声导致的连续错误恢复

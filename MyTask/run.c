@@ -14,6 +14,8 @@
 
 extern uint8_t UserTxBufferHS[APP_TX_DATA_SIZE];
 extern TIM_HandleTypeDef htim13;
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
 
 #include "crc_ccitt.h"
 #define MOTOR_NUM 12
@@ -24,12 +26,14 @@ BMI088_data IMU_data;
 uint32_t error_cnt = 0;
 uint32_t error_cnt2 = 0;
 uint32_t success_cnt = 0;
-uint32_t reast_cnt = 0;
+uint32_t reset_cnt_front = 0;
+uint32_t reset_cnt_back = 0;
 
 // 添加错误标志和重启接收标志
 uint32_t last_error_time = 0;
 
-RS485_t rs485bus;
+RS485_t rs485bus_front;
+RS485_t rs485bus_back;
 QueueHandle_t cdc_recv_semphr;
 
 MotorTargetPack_t legs_target = {.pack_type = 0x04};
@@ -37,45 +41,48 @@ MotorStatePack_t legs_state = {.pack_type = 0x00};
 Leg_t leg[4] = {
 
     // 右前腿
-    {.joint[0] = {.motor = {.motor_id = 0x04, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = 3.968367f},
-     .joint[1] = {.motor = {.motor_id = 0x05, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = 6.73052f},
-     .joint[2] = {.motor = {.motor_id = 0x06, .rs485 = &rs485bus}, .inv_motor = -0.5, .pos_offset = 13.056006f}
+    {.joint[0] = {.motor = {.motor_id = 0x04, .rs485 = &rs485bus_front}, .inv_motor = 1, .pos_offset = 3.968367f},
+     .joint[1] = {.motor = {.motor_id = 0x05, .rs485 = &rs485bus_front}, .inv_motor = 1, .pos_offset = 6.73052f},
+     .joint[2] = {.motor = {.motor_id = 0x06, .rs485 = &rs485bus_front}, .inv_motor = -0.5, .pos_offset = 13.056006f}
      },
     // 左前腿
-    {.joint[0] = {.motor = {.motor_id = 0x01, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = -4.292375f},
-     .joint[1] = {.motor = {.motor_id = 0x02, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = -6.875717f},
-     .joint[2] = {.motor = {.motor_id = 0x03, .rs485 = &rs485bus}, .inv_motor = -0.5, .pos_offset = -13.226964f}
+    {.joint[0] = {.motor = {.motor_id = 0x01, .rs485 = &rs485bus_front}, .inv_motor = 1, .pos_offset = -4.292375f},
+     .joint[1] = {.motor = {.motor_id = 0x02, .rs485 = &rs485bus_front}, .inv_motor = 1, .pos_offset = -6.875717f},
+     .joint[2] = {.motor = {.motor_id = 0x03, .rs485 = &rs485bus_front}, .inv_motor = -0.5, .pos_offset = -13.226964f}
      },
 
     // 右后腿
-    {.joint[0] = {.motor = {.motor_id = 0x0A, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = -4.234103f},
-     .joint[1] = {.motor = {.motor_id = 0x0B, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = 6.392829f},
-     .joint[2] = {.motor = {.motor_id = 0x0C, .rs485 = &rs485bus}, .inv_motor = -0.5, .pos_offset = 12.753429f}
+    {.joint[0] = {.motor = {.motor_id = 0x0A, .rs485 = &rs485bus_back}, .inv_motor = 1, .pos_offset = -4.234103f},
+     .joint[1] = {.motor = {.motor_id = 0x0B, .rs485 = &rs485bus_back}, .inv_motor = 1, .pos_offset = 6.392829f},
+     .joint[2] = {.motor = {.motor_id = 0x0C, .rs485 = &rs485bus_back}, .inv_motor = -0.5, .pos_offset = 12.753429f}
      },
     // 左后腿
-    {.joint[0] = {.motor = {.motor_id = 0x07, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = 4.089883f},
-     .joint[1] = {.motor = {.motor_id = 0x08, .rs485 = &rs485bus}, .inv_motor = 1, .pos_offset = -6.996269f},
-     .joint[2] = {.motor = {.motor_id = 0x09, .rs485 = &rs485bus}, .inv_motor = -0.5, .pos_offset = -13.355066f}
+    {.joint[0] = {.motor = {.motor_id = 0x07, .rs485 = &rs485bus_back}, .inv_motor = 1, .pos_offset = 4.089883f},
+     .joint[1] = {.motor = {.motor_id = 0x08, .rs485 = &rs485bus_back}, .inv_motor = 1, .pos_offset = -6.996269f},
+     .joint[2] = {.motor = {.motor_id = 0x09, .rs485 = &rs485bus_back}, .inv_motor = -0.5, .pos_offset = -13.355066f}
      }
 };
 
 float setup_offset[4][3]; // 上电启动时的电机角度
-uint32_t first_run = 5;
+uint32_t first_run_front = 5;
+uint32_t first_run_back = 5;
 // uint32_t watch_dog_id[24];
-uint32_t reset_uart;
+uint32_t reset_uart_front = 0;
+uint32_t reset_uart_back = 0;
 uint32_t bad_Motor = 0;
-uint64_t uart_reast = 0;
-int err_check = 0;
+uint64_t uart_reset_back = 0;
+int err_check_front = 0;
+int err_check_back = 0;
 
 
-void MotorControlTask(void *param) // 将数据发送到电机，并从电机接收数据
+void MotorControlTask_Front(void *param) // 将数据发送到电机，并从电机接收数据
 {
     TickType_t last_wake_time = xTaskGetTickCount();
     HAL_TIM_Base_Start_IT(&htim13);
     while (1)
     {
-        err_check = 0;
-        for (int i = 0; i < 4; i++)
+        err_check_front = 0;
+        for (int i = 0; i < 2; i++)
         {
             for (int j = 0; j < 3; j++)
             {
@@ -91,7 +98,7 @@ void MotorControlTask(void *param) // 将数据发送到电机，并从电机接
                 if (ret)
                 {
                     bad_Motor &= (~(0x0001 << (i * 3 + j)));
-                    err_check++;
+                    err_check_front++;
                     legs_state.watch_dog = legs_state.watch_dog & (~(0x0001 << (i * 3 + j)));
                 }
                 else
@@ -99,7 +106,7 @@ void MotorControlTask(void *param) // 将数据发送到电机，并从电机接
             }
         }
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(3));
-        if (reset_uart)
+        if (reset_uart_front)
         {
             HAL_UART_DMAStop(&huart2);
             vTaskDelay(2);
@@ -111,12 +118,64 @@ void MotorControlTask(void *param) // 将数据发送到电机，并从电机接
 
             // 4. 重新初始化 UART + DMA，MspInit 会自动执行
             MX_USART2_UART_Init();
-            reset_uart = 0;
-            reast_cnt++;
+            reset_uart_front = 0;
+            reset_cnt_front++;
         }
 
-        if (err_check == 12 && first_run)
-            first_run--;
+        if (err_check_front == 12 && first_run_front)
+            first_run_front--;
+    }
+}
+
+void MotorControlTask_Back(void *param) // 将数据发送到电机，并从电机接收数据
+{
+    TickType_t last_wake_time = xTaskGetTickCount();
+    //HAL_TIM_Base_Start_IT(&htim13);
+    while (1)
+    {
+        err_check_back = 0;
+        for (int i = 2; i < 4; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+
+              GoMotorSend(&leg[i].joint[j].motor, leg[i].joint[j].exp_torque / 6.33f * leg[i].joint[j].inv_motor,
+                           leg[i].joint[j].exp_omega * 6.33f / leg[i].joint[j].inv_motor,
+                           leg[i].joint[j].exp_rad * 6.33f / leg[i].joint[j].inv_motor + leg[i].joint[j].pos_offset + setup_offset[i][j],
+                           leg[i].joint[j].Kp / (6.33f * 6.33f / (leg[i].joint[j].inv_motor * leg[i].joint[j].inv_motor)),
+                           leg[i].joint[j].Kd / (6.33f * 6.33f / (leg[i].joint[j].inv_motor * leg[i].joint[j].inv_motor)));
+				
+
+                int ret = GoMotorRecv(&leg[i].joint[j].motor);
+                if (ret)
+                {
+                    bad_Motor &= (~(0x0001 << (i * 3 + j)));
+                    err_check_back++;
+                    legs_state.watch_dog = legs_state.watch_dog & (~(0x0001 << (i * 3 + j)));
+                }
+                else
+                    bad_Motor |= (0x0001 << (i * 3 + j));
+            }
+        }
+        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(3));
+        if (reset_uart_back)
+        {
+            HAL_UART_DMAStop(&huart3);
+            vTaskDelay(2);
+            HAL_UART_DeInit(&huart3);
+
+            // 3. 外设寄存器硬复位
+            __HAL_RCC_USART3_FORCE_RESET();
+            __HAL_RCC_USART3_RELEASE_RESET();
+
+            // 4. 重新初始化 UART + DMA，MspInit 会自动执行
+            MX_USART3_UART_Init();
+            reset_uart_back = 0;
+            reset_cnt_back++;
+        }
+
+        if (err_check_back == 12 && first_run_back)
+            first_run_back--;
     }
 }
 
@@ -187,7 +246,7 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     cdc_recv_semphr = xSemaphoreCreateBinary();
     xSemaphoreTake(cdc_recv_semphr, 0);
     vTaskDelay(1000);
-    while (first_run) // 等待电机数据准备好
+    while (first_run_front || first_run_back) // 等待电机数据准备好
         vTaskDelay(1);
 
     for (int i = 0; i < 4; i++)
@@ -254,7 +313,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
     {
-        RS485SendIRQ_Handler(&rs485bus, huart);
+        RS485SendIRQ_Handler(&rs485bus_front, huart);
+    }
+    else if (huart->Instance == USART3)
+    {
+        RS485SendIRQ_Handler(&rs485bus_back, huart);
     }
 }
 
@@ -262,7 +325,12 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     if (huart->Instance == USART2)
     {
-        RS485RecvIRQ_Handler(&rs485bus, huart, size);
+        RS485RecvIRQ_Handler(&rs485bus_front, huart, size);
+        success_cnt++;
+    }
+    else if (huart->Instance == USART3)
+    {
+        RS485RecvIRQ_Handler(&rs485bus_back, huart, size);
         success_cnt++;
     }
 }
@@ -270,6 +338,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
+    {
+        __HAL_UART_CLEAR_FLAG(huart,
+                              UART_CLEAR_OREF |
+                                  UART_CLEAR_FEF |
+                                  UART_CLEAR_NEF |
+                                  UART_CLEAR_PEF);
+
+        __HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST);
+
+        error_cnt++;
+    }
+    else if (huart->Instance == USART3)
     {
         __HAL_UART_CLEAR_FLAG(huart,
                               UART_CLEAR_OREF |

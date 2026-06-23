@@ -16,13 +16,15 @@ typedef struct
     GPIO_TypeDef *crtl_port;
     uint32_t ctrl_pin;
 
+    uint8_t *send_buffer;
+    uint8_t *recv_buffer;
     QueueHandle_t send_semphr;   //通信层声明
     QueueHandle_t recv_semphr;
     uint32_t last_recv_size;
 }RS485_t;
 
 
-void RS485Init(RS485_t *rs_485,UART_HandleTypeDef *huart,GPIO_TypeDef *crtl_port,uint32_t ctrl_pin);
+void RS485Init(RS485_t *rs_485,UART_HandleTypeDef *huart,GPIO_TypeDef *crtl_port,uint32_t ctrl_pin,uint8_t *send_buffer,uint8_t *recv_buffer);
 uint32_t RS485Send(RS485_t *rs485,uint8_t *data,uint32_t size,uint32_t time_out);
 uint32_t RS485Recv(RS485_t *rs485,uint8_t*data,uint32_t size,uint32_t time_out,uint32_t* recv_size);
 
