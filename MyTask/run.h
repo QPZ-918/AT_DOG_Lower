@@ -1,4 +1,3 @@
-
 #ifndef __RUN_H__
 #define __RUN_H__
 
@@ -22,11 +21,17 @@ typedef struct{
     float Kd;
 }Joint_t;
 
-
+typedef struct{
+    DMH6215_t wheel_;
+    int8_t inv_wheel;
+    float exp_omega;
+    float exp_torque;
+}DMH6215_t_;
 
 typedef struct{
     Joint_t joint[3];
-	uint32_t tim_p;
+    DMH6215_t_ wheel;
+	  uint32_t tim_p;
 }Leg_t;
 
 
@@ -41,9 +46,14 @@ typedef struct{
     float kd;
 }MotorTarget_t;
 
+typedef struct{
+    float omega;
+    float torque;
+}WheelTarget_t;
 
 typedef struct{
     MotorTarget_t joint[3];
+    WheelTarget_t wheel;
 }LegTarget_t;
 
 typedef struct{
@@ -73,9 +83,14 @@ typedef struct{
     float torque;
 }MotorState_t;
 
+typedef struct{
+    float omega;
+    float torque;
+}WheelState_t;
 
 typedef struct{
     MotorState_t joint[3];
+    WheelState_t wheel;
 }LegState_t;
 
 typedef struct{
@@ -93,5 +108,4 @@ void MotorControlTask(void* param);
 void MotorSendTask(void* param);
 void MotorRecvTask(void* param);
 void BMI088_task(void *param);
-//void UART7_RemotecontrolTask(void *param);
 #endif

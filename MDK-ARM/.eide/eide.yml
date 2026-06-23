@@ -204,7 +204,8 @@ targets:
         - RTE/_Dog_lower
       libList: []
     excludeList: []
-    settings: {}
+    settings:
+      debugger: cortex-debug
     toolchain: AC6
     toolchainConfigMap:
       AC6:

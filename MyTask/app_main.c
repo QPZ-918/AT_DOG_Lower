@@ -69,11 +69,11 @@ void app_main()
 	//remote_semaphore =	xSemaphoreCreateBinary();
 	xTaskCreate(MotorControlTask,"MotorComm",256,NULL,6,&unitree_task_handle);
 	xTaskCreate(MotorSendTask,"MotorSend",256,NULL,4,&usb_send_task_handle);
-	xTaskCreate(MotorRecvTask,"MotorRecv",128,NULL,5,&usb_recv_task_handle);
+	xTaskCreate(MotorRecvTask,"MotorRecv",256,NULL,5,&usb_recv_task_handle);
 	// 创建 USART2 恢复任务，处理硬件噪声导致的连续错误恢复
 	//xTaskCreate(USART2_RecoveryTask,"USART2Rec",256,NULL,4,&uart2_recovery_handle);
 	//xTaskCreate(WheelControlTask,"WheelCtrl",128,NULL,6,&wheel_control_task_handle);
-	xTaskCreate(BMI088_task,"BMI088_task",128,NULL,3,&BMI088_task_handle);
+	xTaskCreate(BMI088_task,"BMI088_task",512,NULL,3,&BMI088_task_handle);
 	//xTaskCreate(UART7_RemotecontrolTask,"UART7Recont",256,NULL,3,&uart7_remocont_task_handle);
 	WS2812_Init();
 	while(1)
