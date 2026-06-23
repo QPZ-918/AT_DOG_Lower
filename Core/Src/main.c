@@ -243,7 +243,8 @@ void PeriphCommonClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 extern uint32_t bad_Motor;
-extern uint32_t reset_uart;
+extern uint32_t reset_uart_front;
+extern uint32_t reset_uart_back;
 extern MotorStatePack_t legs_state;
 uint8_t tim_reset = 0;
 
@@ -295,7 +296,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
     if((bad_Motor & 0x0fff) != 0) tim_reset++;
     else tim_reset = 0;
-    if(tim_reset > 30 && tim_reset < 50) reset_uart = 1;
+    if(tim_reset > 30 && tim_reset < 50) 
+		{
+			if(bad_Motor & 0x3f)	reset_uart_front = 1;
+			if(bad_Motor & 0xFC0) reset_uart_back = 1;
+		}
     else if(tim_reset > 50) legs_state.watch_dog = bad_Motor;
 	}
   /* USER CODE END Callback 0 */
