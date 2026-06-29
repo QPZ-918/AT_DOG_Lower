@@ -123,6 +123,7 @@ void MotorControlTask(void *param) // 将数据发送到电机，并从电机接
 
 uint32_t current_size = 0;
 uint32_t cnt = 0;
+static volatile uint8_t reset_requested = 0;
 void CDC_Recv_Cb(uint8_t *src, uint16_t size)
 {
     if (size == sizeof(MotorTargetPack_t) && ((MotorTargetPack_t *)src)->pack_type == 0x04)
@@ -130,10 +131,14 @@ void CDC_Recv_Cb(uint8_t *src, uint16_t size)
 
         memcpy(&legs_target, src, sizeof(MotorTargetPack_t));
         xSemaphoreGive(cdc_recv_semphr);
-
+        cnt++;
+        current_size = size;
     }
-    cnt++;
-    current_size = size;
+    else if (size == sizeof(ResetPack) && ((ResetPack *)src)->pack_type == 0x10)
+    {
+        reset_requested = 1;
+    }
+
 
 }
 
@@ -200,6 +205,12 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     // xSemaphoreTake(cdc_recv_semphr, portMAX_DELAY); // 等待第一个数据帧到来
     while (1)
     {
+        if (reset_requested)
+        {
+            taskENTER_CRITICAL();
+            HAL_NVIC_SystemReset();
+        }
+
         if (xSemaphoreTake(cdc_recv_semphr, pdMS_TO_TICKS(50)) != pdPASS) // 发生超时，说明通讯断开
         {
             // TODO:通过LED显示，清零所有力矩，电机进入低阻尼模式，整狗进入安全模式

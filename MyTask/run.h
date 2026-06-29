@@ -101,6 +101,11 @@ typedef struct{
 	uint32_t tim_p;
 }MotorStatePack_t;
 
+typedef struct{
+    int pack_type; //10
+    uint8_t data;
+}ResetPack;
+
 #pragma pack()
 
 
