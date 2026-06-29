@@ -23,6 +23,7 @@ virtualFolder:
                 - path: ../Core/Src/main.c
                 - path: ../Core/Src/gpio.c
                 - path: ../Core/Src/freertos.c
+                - path: ../Core/Src/adc.c
                 - path: ../Core/Src/dma.c
                 - path: ../Core/Src/fdcan.c
                 - path: ../Core/Src/spi.c
@@ -71,6 +72,8 @@ virtualFolder:
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c
+            - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.c
+            - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.c
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c
             - path: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c
@@ -134,6 +137,25 @@ virtualFolder:
         - path: ../MyLib/WatchDog2.h
         - path: ../MyLib/dm_h6215.c
         - path: ../MyLib/dm_h6215.h
+        - path: ../MyLib/BMI088/BMI088driver.c
+        - path: ../MyLib/BMI088/BMI088driver.h
+        - path: ../MyLib/BMI088/BMI088Middleware.c
+        - path: ../MyLib/BMI088/BMI088Middleware.h
+        - path: ../MyLib/BMI088/BMI088reg.h
+        - path: ../MyLib/BMI088/bsp_dwt.c
+        - path: ../MyLib/BMI088/bsp_dwt.h
+        - path: ../MyLib/Algorithm/controller.c
+        - path: ../MyLib/Algorithm/controller.h
+        - path: ../MyLib/Algorithm/kalman_filter.c
+        - path: ../MyLib/Algorithm/kalman_filter.h
+        - path: ../MyLib/Algorithm/pid.c
+        - path: ../MyLib/Algorithm/pid.h
+        - path: ../MyLib/Algorithm/QuaternionEKF.c
+        - path: ../MyLib/Algorithm/QuaternionEKF.h
+        - path: ../MyLib/Algorithm/user_lib.c
+        - path: ../MyLib/Algorithm/user_lib.h
+        - path: ../MyLib/imu_temp_ctrl.c
+        - path: ../MyLib/imu_temp_ctrl.h
       folders: []
     - name: MyTask
       files:
@@ -158,6 +180,7 @@ targets:
         - USE_PWR_LDO_SUPPLY
         - USE_HAL_DRIVER
         - STM32H723xx
+        - ARM_MATH_CM7
       incList:
         - ../Core/Inc
         - ../USB_DEVICE/App
@@ -174,11 +197,15 @@ targets:
         - ../Middlewares/ST/ARM/DSP/Inc
         - ../MyLib
         - ../MyTask
+        - .
+        - ../MyLib/BMI088
+        - ../MyLib/Algorithm
         - .cmsis/include
         - RTE/_Dog_lower
       libList: []
     excludeList: []
-    settings: {}
+    settings:
+      debugger: cortex-debug
     toolchain: AC6
     toolchainConfigMap:
       AC6:
