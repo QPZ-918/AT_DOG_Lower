@@ -124,6 +124,7 @@ void MotorControlTask(void *param) // 将数据发送到电机，并从电机接
 uint32_t current_size = 0;
 uint32_t cnt = 0;
 static volatile uint8_t reset_requested = 0;
+uint8_t reset_start = 0;
 void CDC_Recv_Cb(uint8_t *src, uint16_t size)
 {
     if (size == sizeof(MotorTargetPack_t) && ((MotorTargetPack_t *)src)->pack_type == 0x04)
@@ -134,12 +135,11 @@ void CDC_Recv_Cb(uint8_t *src, uint16_t size)
         cnt++;
         current_size = size;
     }
-    else if (size == sizeof(ResetPack) && ((ResetPack *)src)->pack_type == 0x10)
+    else if (size == sizeof(ResetPack) && ((ResetPack *)src)->pack_type == 10)
     {
         reset_requested = 1;
+				reset_start = reset_requested;
     }
-
-
 }
 
 

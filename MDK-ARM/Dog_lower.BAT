@@ -1,7 +1,4 @@
 SET PATH=C:\APP\32_keil5\keil5_core\ARM\ARMCLANG\Bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps;C:\Program Files\HP\OMEN-Broadcast\Common;C:\Program Files\dotnet\;C:\study\git\Git\cmd;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\APP\matlab\runtime\win64;C:\APP\matlab\bin;C:\Users\Qi\scoop\shims;C:\Users\Qi\AppData\Local\Microsoft\WindowsApps;C:\APP\VS CODE\Microsoft VS Code\bin;C:\study\mingw-w64\mingw-w64\x86_64-8.1.0-release-win32-seh-rt_v6-rev0\bin;;C:\Users\Qi\AppData\Local\Microsoft\WindowsApps;C:\Users\Qi\AppData\Local\Microsoft\WinGet\Packages\Anthropic.ClaudeCode_Microsoft.Winget.Source_8wekyb3d8bbwe;
-SET ARMCC6_ASMOPT=--diag_suppress=9931
-SET ARMCC6_CCOPT=--diag_suppress=9931
-SET ARMCC6_LINKOPT=--diag_suppress=9931
 SET CPU_TYPE=STM32H723VGTx
 SET CPU_VENDOR=STMicroelectronics
 SET UV2_TARGET=Dog_lower
