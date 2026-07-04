@@ -302,6 +302,7 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     cdc_recv_semphr = xSemaphoreCreateBinary();
     xSemaphoreTake(cdc_recv_semphr, 0);
     vTaskDelay(1000);
+		HAL_TIM_Base_Start_IT(&htim13);
     while (first_run_back != 0 || first_run_front != 0) // 等待电机数据准备好
         vTaskDelay(1);
 
@@ -317,7 +318,6 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     }
     allow_send = 1;
     vTaskDelay(1000);
-    HAL_TIM_Base_Start_IT(&htim13);
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 3; j++)
