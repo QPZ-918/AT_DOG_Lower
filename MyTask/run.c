@@ -138,7 +138,7 @@ void CDC_Recv_Cb(uint8_t *src, uint16_t size)
     else if (size == sizeof(ResetPack) && ((ResetPack *)src)->pack_type == 10)
     {
         reset_requested = 1;
-				reset_start = reset_requested;
+		reset_start = reset_requested;
     }
 }
 
@@ -207,8 +207,22 @@ void MotorRecvTask(void *param) // 从PC接收电机的期望值
     {
         if (reset_requested)
         {
-            taskENTER_CRITICAL();
-            HAL_NVIC_SystemReset();
+            reset_requested = 0;
+            first_run = 5;
+            allow_send = 0;
+            vTaskDelay(500);
+            // taskENTER_CRITICAL();
+            // HAL_NVIC_SystemReset();
+            while (first_run) // 等待电机数据准备好
+            vTaskDelay(1);
+
+            for (int i = 0; i < 4; i++)
+            {
+                setup_offset[i][0] = leg[i].joint[0].motor.state.rad;
+                setup_offset[i][1] = leg[i].joint[1].motor.state.rad;
+                setup_offset[i][2] = leg[i].joint[2].motor.state.rad;
+            }
+            allow_send = 1; // 允许发送数据
         }
 
         if (xSemaphoreTake(cdc_recv_semphr, pdMS_TO_TICKS(50)) != pdPASS) // 发生超时，说明通讯断开
