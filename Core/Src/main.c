@@ -286,12 +286,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	      if (bad_Motor & motor_mask)
 	      {
 	        if (tim_reset[i] < 255) tim_reset[i]++;
-	        if (tim_reset[i] > 30 && tim_reset[i] < 50)
+	        if (tim_reset[i] > 30 && tim_reset[i] < 80)
 	        {
 	          if (motor_mask & 0x003F) reset_uart_front = 1;
 	          if (motor_mask & 0x0FC0) reset_uart_back = 1;
 	        }
-	        else if (tim_reset[i] > 50) watch_dog_mask |= motor_mask;
+	        else if (tim_reset[i] > 80) watch_dog_mask |= motor_mask;
 	      }
 	      else
 	      {
