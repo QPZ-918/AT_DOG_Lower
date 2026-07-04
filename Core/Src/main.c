@@ -234,7 +234,7 @@ extern uint32_t bad_Motor;
 extern uint32_t reset_uart_front;
 extern uint32_t reset_uart_back;
 extern MotorStatePack_t legs_state;
-uint8_t tim_reset = 0;
+uint8_t tim_reset[12] = {0};
 /* USER CODE END 4 */
 
  /* MPU Configuration */
@@ -278,16 +278,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
   if(htim->Instance==TIM13)
-	{
-    if((bad_Motor & 0x0fff) != 0) tim_reset++;
-    else tim_reset = 0;
-    if(tim_reset > 30 && tim_reset < 50)
-    {
-      if((bad_Motor & 0x003F) != 0) reset_uart_front = 1;
-      if((bad_Motor & 0x0FC0) != 0) reset_uart_back = 1;
-    }
-    else if(tim_reset > 50) legs_state.watch_dog = bad_Motor;
-	}
+		{
+	    uint32_t watch_dog_mask = 0;
+	    for (int i = 0; i < 12; i++)
+	    {
+	      uint32_t motor_mask = 0x0001 << i;
+	      if (bad_Motor & motor_mask)
+	      {
+	        if (tim_reset[i] < 255) tim_reset[i]++;
+	        if (tim_reset[i] > 30 && tim_reset[i] < 50)
+	        {
+	          if (motor_mask & 0x003F) reset_uart_front = 1;
+	          if (motor_mask & 0x0FC0) reset_uart_back = 1;
+	        }
+	        else if (tim_reset[i] > 50) watch_dog_mask |= motor_mask;
+	      }
+	      else
+	      {
+	        tim_reset[i] = 0;
+	      }
+	    }
+	    legs_state.watch_dog = watch_dog_mask;
+		}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM7)
   {
