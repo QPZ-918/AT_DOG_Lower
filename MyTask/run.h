@@ -141,6 +141,7 @@ typedef struct {
    // RemoteCmd_t remote_cmd;    /**< 当前遥控指令（已解析并滤波） */
     uint16_t watch_dog;        /**< 看门狗标志位：bit 位为 1 表示对应电机掉线 */
 	uint32_t timestamp;
+    uint16_t motor_error;
 } MotorStatePack_t;
 
 #pragma pack()
